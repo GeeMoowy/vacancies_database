@@ -62,8 +62,3 @@ class HeadHunterAPI(BaseAPI):
             vacancies.extend(company_vacancies)
 
         return vacancies
-
-res = HeadHunterAPI()
-vac = res.get_vacancies()
-print(vac)
-print(len(vac))
