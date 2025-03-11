@@ -135,8 +135,3 @@ class DBManager(BaseDBManager):
         """Метод получает список всех вакансий,
         в названии которых содержатся переданные в метод слова, например python."""
         pass
-
-if __name__ == "__main__":
-    res = DBManager('tests')
-    res.create_database()
-    res.fill_vacancies()
