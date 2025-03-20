@@ -1,6 +1,5 @@
 from src.base_db_manager import BaseDBManager
 import psycopg2
-
 from src.config import config, COMPANY_NAMES
 
 
@@ -63,25 +62,20 @@ class DBManager(BaseDBManager):
         conn.close()
 
     def fill_vacancies(self, vacancies_data: list[dict]):
-        """
-        Заполняет таблицу vacancies данными из списка словарей.
-        :param vacancies_data: Список словарей с данными о вакансиях.
-        """
+        """Заполняет таблицу vacancies данными из списка словарей"""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)
         with conn.cursor() as cur:
             for vacancy in vacancies_data:
-                # Получаем данные из словаря
-                vacancy_id = vacancy.get('id')
+
+                vacancy_id = vacancy.get('id')  # Получаем данные из словаря
                 vacancy_name = vacancy.get('name')
                 salary = vacancy.get('salary', {})  # Получаем словарь с зарплатой
                 salary_from = salary.get('from') if salary else None  # Зарплата "от"
                 vacancy_url = vacancy.get('url')
 
-                # Если зарплата не указана, устанавливаем значение по умолчанию
-                if salary_from is None:
+                if salary_from is None:  # Если зарплата не указана, устанавливаем значение по умолчанию
                     salary_from = 0
 
-                # Получаем company_id по названию компании (если есть)
                 company_name = vacancy.get('employer', {}).get('name')  # Название компании
                 if company_name:
                     cur.execute("""
@@ -91,13 +85,10 @@ class DBManager(BaseDBManager):
                     if company_id:
                         company_id = company_id[0]
                     else:
-                        # Если компании нет в таблице, пропускаем вакансию
-                        continue
+                        continue  # Если компании нет в таблице, пропускаем вакансию
                 else:
-                    # Если название компании отсутствует, пропускаем вакансию
-                    continue
+                    continue  # Если название компании отсутствует, пропускаем вакансию
 
-                # Вставляем данные в таблицу vacancies
                 cur.execute("""
                     INSERT INTO vacancies (vacancy_id, company_id, vacancy_name, salary, vacancy_url)
                     VALUES (%s, %s, %s, %s, %s)
@@ -111,7 +102,6 @@ class DBManager(BaseDBManager):
         """Возвращает список всех компаний и количество вакансий у каждой компании"""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)
         with conn.cursor() as cur:
-            # SQL-запрос для получения списка компаний и количества вакансий
             cur.execute("""
                 SELECT companies.company_name, COUNT(vacancies.vacancy_id) AS vacancies_count
                 FROM companies
@@ -142,13 +132,61 @@ class DBManager(BaseDBManager):
 
     def get_avg_salary(self, *args, **kwargs):
         """Метод получает среднюю зарплату по вакансиям"""
-        pass
+        conn = psycopg2.connect(dbname=self.db_name, **self.params)
+        with conn.cursor() as cur:
+            # SQL-запрос для получения средней зарплаты
+            cur.execute("""
+                    SELECT AVG(salary) FROM vacancies
+                """)
+            avg_salary = cur.fetchone()[0]  # Получаем результат запроса
+
+        conn.close()
+        return f"Средняя зарплата по всем вакансиям в базе данных = {avg_salary}" if avg_salary is not None else 0
 
     def get_vacancies_with_higher_salary(self, *args, **kwargs):
         """Метод получает список всех вакансий, у которых зарплата выше средней по всем вакансиям"""
-        pass
+        conn = psycopg2.connect(dbname=self.db_name, **self.params)
+        with conn.cursor() as cur:
+            # Получаем среднюю зарплату
+            cur.execute("SELECT AVG(salary) FROM vacancies WHERE salary IS NOT NULL")
+            avg_salary = cur.fetchone()[0]
 
-    def get_vacancies_with_keyword(self, *args, **kwargs):
+            # Получаем вакансии с зарплатой выше средней
+            cur.execute("""
+                    SELECT companies.company_name, vacancies.vacancy_name, vacancies.salary, vacancies.vacancy_url
+                    FROM vacancies
+                    INNER JOIN companies ON vacancies.company_id = companies.company_id
+                    WHERE vacancies.salary > %s
+                """, (avg_salary,))
+
+            result = cur.fetchall()  # Получаем результат запроса
+
+        conn.close()
+        return result
+
+    def get_vacancies_with_keyword(self, keywords: list):
         """Метод получает список всех вакансий,
         в названии которых содержатся переданные в метод слова, например python."""
-        pass
+        conn = psycopg2.connect(dbname=self.db_name, **self.params)
+        with conn.cursor() as cur:
+            # Создаем условия для запроса
+            conditions = []
+            params = []
+
+            for keyword in keywords:
+                conditions.append("vacancies.vacancy_name ILIKE %s")
+                params.append(f'%{keyword}%')
+
+            # Соединяем условия через OR
+            query = f"""
+                SELECT companies.company_name, vacancies.vacancy_name, vacancies.salary, vacancies.vacancy_url
+                FROM vacancies
+                INNER JOIN companies ON vacancies.company_id = companies.company_id
+                WHERE {' OR '.join(conditions)}
+            """
+
+            cur.execute(query, params)  # Передаем параметры запроса
+            result = cur.fetchall()  # Получаем результат запроса
+
+        conn.close()
+        return result
