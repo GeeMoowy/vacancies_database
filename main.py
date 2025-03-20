@@ -2,7 +2,9 @@ from src.db_manager import DBManager
 from src.headhunter_api import HeadHunterAPI
 
 
-def main():
+def main() -> None:
+    """Функция для взаимодействия с пользователем"""
+
     vacancy = HeadHunterAPI()
     vacancies_hh = vacancy.get_vacancies()
     vacancies_database = DBManager('tests')
@@ -43,6 +45,7 @@ def main():
             break
         else:
             print('Некорректный ввод! Введите цифры от 1 и до 6')
+
 
 if __name__ == "__main__":
     main()

@@ -1,16 +1,19 @@
-from src.base_db_manager import BaseDBManager
+from typing import Any, Dict, List, Tuple
+
 import psycopg2
-from src.config import config, COMPANY_NAMES
+
+from src.base_db_manager import BaseDBManager
+from src.config import COMPANY_NAMES, config
 
 
 class DBManager(BaseDBManager):
     """Класс, который подключается к БД PostgreSQL и работает с ней"""
 
-    def __init__(self, db_name: str):
+    def __init__(self, db_name: str) -> None:
         self.db_name = db_name
         self.params = config()
 
-    def create_database(self):
+    def create_database(self) -> None:
         """Создание базы данных и таблиц для работы с компаниями и вакансиями"""
         conn = psycopg2.connect(dbname='postgres', **self.params)
         conn.autocommit = True
@@ -47,7 +50,7 @@ class DBManager(BaseDBManager):
 
         self.fill_companies()
 
-    def fill_companies(self):
+    def fill_companies(self) -> None:
         """Заполняет таблицу companies данными из списка в модуле config.py"""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)
         with conn.cursor() as cur:
@@ -61,7 +64,7 @@ class DBManager(BaseDBManager):
         conn.commit()
         conn.close()
 
-    def fill_vacancies(self, vacancies_data: list[dict]):
+    def fill_vacancies(self, vacancies_data: List[Dict[str, Any]]) -> None:
         """Заполняет таблицу vacancies данными из списка словарей"""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)
         with conn.cursor() as cur:
@@ -98,7 +101,7 @@ class DBManager(BaseDBManager):
         conn.commit()
         conn.close()
 
-    def get_companies_and_vacancies_count(self):
+    def get_companies_and_vacancies_count(self) -> List[Tuple]:
         """Возвращает список всех компаний и количество вакансий у каждой компании"""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)
         with conn.cursor() as cur:
@@ -114,7 +117,7 @@ class DBManager(BaseDBManager):
         conn.close()
         return result
 
-    def get_all_vacancies(self, *args, **kwargs):
+    def get_all_vacancies(self) -> List[Tuple]:
         """Метод получает список всех вакансий с указанием названия компании,
         названия вакансии и зарплаты и ссылки на вакансию"""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)
@@ -130,7 +133,7 @@ class DBManager(BaseDBManager):
         conn.close()
         return result
 
-    def get_avg_salary(self, *args, **kwargs):
+    def get_avg_salary(self) -> float:
         """Метод получает среднюю зарплату по вакансиям"""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)
         with conn.cursor() as cur:
@@ -143,7 +146,7 @@ class DBManager(BaseDBManager):
         conn.close()
         return f"Средняя зарплата по всем вакансиям в базе данных = {avg_salary}" if avg_salary is not None else 0
 
-    def get_vacancies_with_higher_salary(self, *args, **kwargs):
+    def get_vacancies_with_higher_salary(self) -> List[Tuple]:
         """Метод получает список всех вакансий, у которых зарплата выше средней по всем вакансиям"""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)
         with conn.cursor() as cur:
@@ -164,7 +167,7 @@ class DBManager(BaseDBManager):
         conn.close()
         return result
 
-    def get_vacancies_with_keyword(self, keywords: list):
+    def get_vacancies_with_keyword(self, keywords: List[str]) -> List[Tuple]:
         """Метод получает список всех вакансий,
         в названии которых содержатся переданные в метод слова, например python."""
         conn = psycopg2.connect(dbname=self.db_name, **self.params)

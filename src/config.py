@@ -16,6 +16,7 @@ COMPANY_NAMES = [
 
 
 def config(filename='database.ini', section='postgresql'):
+    """Функция распаковки параметров из файла database.ini"""
     parser = ConfigParser()
     parser.read(filename, encoding='UTF-8')
     db = {}
@@ -26,4 +27,3 @@ def config(filename='database.ini', section='postgresql'):
     else:
         raise Exception('Section {0} is not found  in the {1} file'.format(section, filename))
     return db
-
