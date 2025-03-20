@@ -3,12 +3,12 @@ from configparser import ConfigParser
 
 COMPANY_NAMES = [
     "МедРокет",
-    "Ракета",
-    "Интерсофт",
-    "Газпром",
+    "MIP",
+    "АО Кубаньторгбанк",
+    "Мореон инвест",
     "Бронируй Онлайн",
-    "МТС",
-    "Voxys",
+    "AdminMobile",
+    "VIDEO INSIDE",
     "WILIX",
     "HRКАДРЫ",
     "YAKHA"

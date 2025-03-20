@@ -72,23 +72,17 @@ class DBManager(BaseDBManager):
             for vacancy in vacancies_data:
                 # Получаем данные из словаря
                 vacancy_id = vacancy.get('id')
-                print(vacancy_id)
                 vacancy_name = vacancy.get('name')
-                print(vacancy_name)
                 salary = vacancy.get('salary', {})  # Получаем словарь с зарплатой
                 salary_from = salary.get('from') if salary else None  # Зарплата "от"
-                print(salary_from)
                 vacancy_url = vacancy.get('url')
-                print(vacancy_url)
 
                 # Если зарплата не указана, устанавливаем значение по умолчанию
                 if salary_from is None:
                     salary_from = 0
-                    print(salary_from)
 
                 # Получаем company_id по названию компании (если есть)
                 company_name = vacancy.get('employer', {}).get('name')  # Название компании
-                print(company_name)
                 if company_name:
                     cur.execute("""
                         SELECT company_id FROM companies WHERE company_name = %s
@@ -113,15 +107,38 @@ class DBManager(BaseDBManager):
         conn.commit()
         conn.close()
 
+    def get_companies_and_vacancies_count(self):
+        """Возвращает список всех компаний и количество вакансий у каждой компании"""
+        conn = psycopg2.connect(dbname=self.db_name, **self.params)
+        with conn.cursor() as cur:
+            # SQL-запрос для получения списка компаний и количества вакансий
+            cur.execute("""
+                SELECT companies.company_name, COUNT(vacancies.vacancy_id) AS vacancies_count
+                FROM companies
+                LEFT JOIN vacancies ON companies.company_id = vacancies.company_id
+                GROUP BY companies.company_name
+                ORDER BY vacancies_count DESC
+            """)
+            result = cur.fetchall()  # Получаем результат запроса
 
-    def get_companies_and_vacancies_count(self, *args, **kwargs):
-        """Метод получает список всех компаний и количество вакансий у каждой компании"""
-        pass
+        conn.close()
+        return result
 
     def get_all_vacancies(self, *args, **kwargs):
         """Метод получает список всех вакансий с указанием названия компании,
         названия вакансии и зарплаты и ссылки на вакансию"""
-        pass
+        conn = psycopg2.connect(dbname=self.db_name, **self.params)
+        with conn.cursor() as cur:
+            # SQL-запрос для получения всех вакансий
+            cur.execute("""
+                    SELECT companies.company_name, vacancies.vacancy_name, vacancies.salary, vacancies.vacancy_url
+                    FROM vacancies
+                    INNER JOIN companies ON vacancies.company_id = companies.company_id
+                """)
+            result = cur.fetchall()  # Получаем результат запроса
+
+        conn.close()
+        return result
 
     def get_avg_salary(self, *args, **kwargs):
         """Метод получает среднюю зарплату по вакансиям"""
